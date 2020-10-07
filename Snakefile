@@ -17,6 +17,8 @@ tail -n +2 data/trios_gt.csv \
 honeybee_genotype_pipeline = (
     'shub://TomHarrop/'
     'honeybee-genotype-pipeline:honeybee_genotype_pipeline_v0.0.12')
+samtools = 'shub://TomHarrop/align-utils:samtools_1.10'
+r = 'shub://TomHarrop/r-containers:r_4.0.0'
 
 
 sample_info = 'data/trios_gt.csv'
@@ -32,6 +34,48 @@ sample_df = pandas.read_csv(sample_info,
                             index_col='sample')
 
 all_samples = sorted(set(sample_df.index))
+
+
+rule target:
+    input:
+        'output/030_trios/mendelian.txt'
+
+# check mendelian patterns (re run after filtering)
+rule test_trios:
+    input:
+        vcf = 'output/010_genotypes/calls.vcf.gz',
+        trios = 'output/030_trios/all_trios.txt',
+        rules = 'output/030_trios/rules.txt'
+    output:
+        'output/030_trios/mendelian.txt'
+    log:
+        'output/logs/test_trios.log'
+    singularity:
+        samtools
+    shell:
+        'bcftools +mendelian '
+        '{input.vcf} '
+        '-T {input.trios} '
+        '-R {input.rules} '
+        '-c '
+        '> {output} '
+        '2> {log}'
+
+
+rule generate_trios:
+    input:
+        sample_info = sample_info,
+        fai = f'{ref}.fai'
+    output:
+        trios = 'output/030_trios/all_trios.txt',
+        rules = 'output/030_trios/rules.txt'
+    log:
+        'output/logs/generate_trios.log'
+    singularity:
+        r
+    script:
+        'src/generate_trios.R'
+
 
 # genotype
 checkpoint genotype:
@@ -79,3 +123,15 @@ rule cnv_map:
         '| cut -d\',\' -f 1,5 --output-delimiter=\' \' '
         '> {output}'
 
+
+rule index_fa:
+    input:
+        '{path}/{file}.{ext}'
+    output:
+        '{path}/{file}.{ext}.fai'
+    wildcard_constraints:
+        ext = 'fasta|fa|fna'
+    singularity:
+        samtools
+    shell:
+        'samtools faidx {input}'
