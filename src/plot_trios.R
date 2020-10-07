@@ -37,7 +37,7 @@ gp <- ggplot(trios,
   xlab(NULL) + ylab("Mendelian error frequency") +
   scale_colour_viridis_d(guide = guide_legend(title = "Worker hive")) +
   facet_grid(drone_hive_plot ~ queen_hive_plot,
-             scales = "free_x") +
+             scales = "free_y") +
   geom_point(shape = 16,
              size = 1,
              position = position_jitter(width = 0.1),
