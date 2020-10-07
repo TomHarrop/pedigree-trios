@@ -38,10 +38,22 @@ all_samples = sorted(set(sample_df.index))
 
 rule target:
     input:
-        'output/030_trios/mendelian.txt'
+        'output/030_trios/mendelian.pdf'
 
 # check mendelian patterns (re run after filtering)
 # filter for biallelec, SNPs only, check maf etc.
+rule plot_trios:
+    input:
+        trios = 'output/030_trios/mendelian.txt',
+    output:
+        plot = 'output/030_trios/mendelian.pdf'
+    log:
+        'output/logs/plot_trios.log'
+    singularity:
+        r
+    script:
+        'src/plot_trios.R'
+
 rule test_trios:
     input:
         vcf = 'output/020_filtered/filtered.vcf.gz',
